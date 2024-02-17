@@ -35,7 +35,9 @@ class SequenceDataSet:
 
     def class_to_tensor(self, class_name):
         # Conversione della classe in un tensore
-        # testing serve quando si fa inferenza sul modello già addestrato
+
+        # testing serve quando si fa inferenza sul modello già addestrato, in quanto restituisce la label per ciascuno
+        # dei tre problemi binari che stiamo considerando
         if self.letter_idx == 'testing':
             if class_name[0] == "O":
                 brake = torch.Tensor([1, 0])
@@ -51,17 +53,19 @@ class SequenceDataSet:
                 right = torch.Tensor([0, 1])
             return torch.stack([brake, left, right])
 
+        # both serve per addestrare sia sulle Roi sinistre e Roi destre, generiamo infatti una label per ciascuno dei due
         if self.letter_idx == 'both':
-          if class_name[1] == "O":
-              left = torch.Tensor([1, 0])
-          else:
-              left = torch.Tensor([0, 1])
-          if class_name[2] == "O":
-              right = torch.Tensor([1, 0])
-          else:
-              right = torch.Tensor([0, 1])
-          return torch.stack([left, right])
+            if class_name[1] == "O":
+                left = torch.Tensor([1, 0])
+            else:
+                left = torch.Tensor([0, 1])
+            if class_name[2] == "O":
+                right = torch.Tensor([1, 0])
+            else:
+                right = torch.Tensor([0, 1])
+            return torch.stack([left, right])
 
+        # in tutti gli altri casi (0 1 e 2) si genera la label a seconda della lettera corrispondente a letter_idx
         if class_name[self.letter_idx] == "O":
             return torch.Tensor([1, 0])
         else:

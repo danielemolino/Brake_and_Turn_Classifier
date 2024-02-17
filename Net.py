@@ -31,9 +31,7 @@ class LSTM(nn.Module):
         self.reset_params()
 
     def reset_params(self):
-        """
-        Initialize network parameters.
-        """
+        # Inizializziamo i parametri dell'LSTM
 
         std = 1.0 / math.sqrt(self.hidden_size)
         self.weight_xh.data.uniform_(-std, std)
@@ -42,18 +40,6 @@ class LSTM(nn.Module):
         self.bias_hh.data.uniform_(-std, std)
 
     def forward(self, x):
-        """
-        Args:
-            x: input with shape (n, tt, D) where n is number of samples, tt is
-                number of timestep and D is input size which must be equal to
-                self.input_size.
-
-        Returns:
-            y: output with a shape of (n, tt, h) where h is hidden size
-        """
-
-        # Transpose input for efficient vectorized calculation. After transposing
-        # the input will have (tt, n, D).
         x = x.transpose(0, 1)
 
         # Unpack dimensions
@@ -101,7 +87,7 @@ class BrakeNet(nn.Module):
         super().__init__()
         self.model = nn.ModuleDict({
             'cnn': nn.Sequential(
-                # (3 x 277 x 277)
+                # (3 x 227 x 227)
                 nn.Conv2d(in_channels=3, out_channels=96, kernel_size=7, stride=2, padding=0),
                 nn.ReLU(),
                 # (96 x 111 x 111)
@@ -114,7 +100,6 @@ class BrakeNet(nn.Module):
                 nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
                 nn.BatchNorm2d(384),
                 # (384 x 13 x 13)
-                # For the last few layers I assume some paddings since the sizes don't change
                 nn.Conv2d(in_channels=384, out_channels=512, kernel_size=5, stride=1, padding=2),
                 nn.ReLU(),
                 # (512 x 13 x 13)
@@ -144,14 +129,9 @@ class BrakeNet(nn.Module):
 
         x = x.view(x.shape[0], 1, -1)
 
-        # Then, reshape the input and pass it through the LSTM
         x = self.model['lstm'](x)[0][-1]
 
-        # From the paper:
-        # "The output of each LSTM layer is sent to the last fully connected layer of our network
-        # to compute a class probability for each time step"
         y = self.model['out'](x)[0]
 
-        # "Given a test frame, instead of taking average among the output predictions, we take the
-        # prediction of the last frame as the label for the entire input sequence."
         return y
+

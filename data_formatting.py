@@ -4,7 +4,7 @@ import ahocorasick
 from dataclasses import dataclass
 from dataset import SequenceDataSet, CustomDataLoader
 
-# Only the six classes considered for the task
+# Sono le sei classi considerate nel task di classificazione
 classes = ['OOO', 'BOO', 'OLO', 'BLO', 'OOR', 'BOR']
 
 
@@ -27,8 +27,13 @@ class DataProcessor:
         return data_dict_list
 
     @staticmethod
-    def convert_to_train_test(data_dict_list, n_train_sequences=None, n_test_sequences=None, val_ratio=None, shuffle=True, max_sequence_size=None):
-        # prendiamo i nomi di tutte le sequenze
+    # n_train_sequences è il numero di sequenze di training che vogliamo estrarre (di default vengono caricate tutte quelle presenti nel dataset)
+    # n_test_sequences è il numero di sequenze di test che vogliamo estrarre (di default vengono caricate tutte quelle presenti nel dataset)
+    # val_ratio è la percentuale di training che estraiamo per usare come validation
+    # shuffle ci permettere di rimescolare i campioni
+    # max_sequence_size è il numero di campioni che genera una sequenza, di default è 16
+    def convert_to_train_test(data_dict_list, n_train_sequences=None, n_test_sequences=None, val_ratio=None, shuffle=True, max_sequence_size=16):
+        # Prendiamo i nomi di tutte le sequenze
         sequence_names = list(set(entry.name for entry in data_dict_list))
 
         all_sequences = {}
@@ -46,11 +51,11 @@ class DataProcessor:
                     all_sequences[name] = all_sequences[name][:-extra]
                     num_sequences = len(all_sequences[name]) // max_sequence_size
                     for i in range(num_sequences):
-                        # Create a new sequence name
+                        # Creiamo il nome della nuova sequenza
                         new_name = f"{name}+{i+1}"
-                        # Split the sequence and add it to all_sequences
+                        # Aggiungiamo la nuova sequenza al dizionario
                         all_sequences[new_name] = all_sequences[name][i * max_sequence_size:(i + 1) * max_sequence_size]
-                    # erase the original sequence
+                    # Eliminiamo la sequenza originale
                     del all_sequences[name]
 
         sequence_names = list(set(all_sequences.keys()))
@@ -68,7 +73,7 @@ class DataProcessor:
         if n_test_sequences is not None:
             test_sequence_names = test_sequence_names[:n_test_sequences]
 
-        # Split train set into train - val
+        # se richiesto, dividiamo le sequenze di train in train e validation
         train_val_split = int(len(train_sequence_names) * val_ratio)
         val_sequence_names = train_sequence_names[:train_val_split]
         train_sequence_names = train_sequence_names[train_val_split:]
@@ -78,7 +83,7 @@ class DataProcessor:
         test_sequences = {k: v for k, v in all_sequences.items() if k in test_sequence_names}
 
         if n_test_sequences is not None or n_train_sequences is not None or max_sequence_size is not None:
-            # Update the list of all frame entries
+            # se abbiamo modificato le sequenze, dobbiamo aggiornare anche data_dict_list
             data_dict_list = []
             for name, frame_list in train_sequences.items():
                 data_dict_list += frame_list
@@ -115,7 +120,7 @@ def findit_with_ahocorasick_name(automaton, element):
 
 @dataclass
 class Frame:
-    name: str
-    location: str
-    data_class: str
-    picture: torch.Tensor = None
+    name: str  # nome del file
+    location: str  # path del file
+    data_class: str  # classe del file (OOO, BOO, OLO...)
+    picture: torch.Tensor = None  # Tensore immagine
